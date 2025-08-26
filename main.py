@@ -28,8 +28,6 @@ NO_SE = "No sé, no recuerdo"
 
 # ----------------------------------
 # Banco de preguntas (15 ítems)
-# Cada pregunta tiene:
-#   id, difficulty, prompt, correct, distractors (list[str]), explanation
 # ----------------------------------
 QUESTION_BANK: List[Dict] = [
     {
@@ -215,7 +213,6 @@ def grade_quiz():
             correct += 1
             breakdown[diff]["ok"] += 1
         else:
-            # Guardamos para revisión solo las falladas u omitidas
             review_rows.append({
                 "#": len(review_rows) + 1,
                 "Dificultad": diff,
@@ -251,23 +248,19 @@ with cols[1]:
 with cols[2]:
     show_idx = st.checkbox("Mostrar numeración original", value=False)
 
-# Inicialización por primera carga
 if not st.session_state.shuffled_ids:
     reset_quiz(shuffle_questions=True)
 
-# Progreso
 answered = sum(1 for qid in st.session_state.shuffled_ids if st.session_state.responses.get(qid))
 st.progress(answered / len(QUESTION_BANK))
 st.write(f"**Progreso:** {answered}/{len(QUESTION_BANK)} preguntas respondidas")
 
 st.divider()
 
-# Render de preguntas
 for i, qid in enumerate(st.session_state.shuffled_ids, start=1):
     q = get_question_by_id(qid)
     opts = get_options_for(q)
 
-    # Tarjeta visual simple
     st.markdown(f"### {i}. {q['prompt']}")
     st.markdown(f"**Dificultad:** {q['difficulty']}")
 
@@ -279,10 +272,8 @@ for i, qid in enumerate(st.session_state.shuffled_ids, start=1):
         index=opts.index(default) if default in opts else None,
         key=key_radio,
     )
-    # Guardar respuesta elegida (o None si quitó la selección)
     st.session_state.responses[qid] = choice
 
-    # Feedback inmediato si ya se calificó
     if st.session_state.graded:
         if choice == q["correct"]:
             st.success("✔️ ¡Correcto!")
@@ -297,21 +288,18 @@ for i, qid in enumerate(st.session_state.shuffled_ids, start=1):
 
     st.divider()
 
-# Botones de calificación y resumen
 col_a, col_b = st.columns(2)
 with col_a:
     if st.button("📝 Calificar intento", type="primary", use_container_width=True):
         grade_quiz()
 with col_b:
     if st.button("🧹 Limpiar respuestas", use_container_width=True):
-        # Mantiene el orden, pero borra respuestas y calificación
         st.session_state.responses = {}
         st.session_state.graded = False
         st.session_state.score = 0
         st.session_state.breakdown = {}
         st.session_state.review = []
 
-# Resumen de resultados
 if st.session_state.graded:
     total = len(QUESTION_BANK)
     score = st.session_state.score
