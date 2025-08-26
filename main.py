@@ -1,322 +1,220 @@
 import streamlit as st
 import random
-from typing import Dict, List
 
-# ---------------------------
-# Configuración de la página
-# ---------------------------
-st.set_page_config(page_title="Banco de ejercicios: Números reales", page_icon="➗", layout="centered")
+st.set_page_config(page_title="Banco de ejercicios: números", page_icon="🧮", layout="centered")
 
-# Semilla opcional para reproducibilidad (puedes cambiarla)
-RANDOM_SEED = 42
+# -----------------------------
+# Reglas didácticas usadas
+# -----------------------------
+# - Considera "números naturales" como 1, 2, 3, ... (sin incluir el cero).
+# - Un número entero puede ser negativo, cero o positivo (…,-2,-1,0,1,2,…).
+# - Un número racional puede escribirse como fracción de enteros (incluye decimales finitos y periódicos).
+# - Un número irracional no puede escribirse como fracción de enteros (decimales infinitos no periódicos).
+# - 4/0 no es un número real (no está definido).
 
-# ----------------------------------
-# Convenciones y ayudas didácticas
-# ----------------------------------
-HELP_MD = r"""
-**Convenciones usadas en este banco**
+# Utilidad: barajar manteniendo "No sé, no recuerdo" al final
+def shuffled_with_idk(options3):
+    opts = options3[:]  # copia
+    random.shuffle(opts)
+    opts.append("No sé, no recuerdo")
+    return opts
 
-- $\mathbb{N}$ (naturales): \{1,2,3,\dots\}. **Aquí 0 no se considera natural.**
-- $\mathbb{Z}$ (enteros): \{\dots,-2,-1,0,1,2,\dots\}.
-- $\mathbb{Q}$ (racionales): fracciones de enteros con denominador distinto de 0; **todo decimal finito o periódico** es racional.
-- *Irracionales* ($\mathbb{R} \\setminus \mathbb{Q}$): decimales infinitos **no periódicos** (p. ej., $\pi$, $\sqrt{2}$, $e$).
+# Base de ejercicios (12)
+# Cada ejercicio: enunciado, nivel, opciones3 (tres primeras sin "No sé, no recuerdo"),
+# y la respuesta correcta entre esas tres.
+EXERCISES = [
+    # --- MUY FÁCIL ---
+    {
+        "nivel": "muy fácil",
+        "enunciado": "¿Cuál es la mejor clasificación para el número 7?",
+        "opciones3": ["Número natural", "Entero negativo", "Número irracional"],
+        "correcta": "Número natural",
+        "nota": "Los naturales comienzan en 1 y suben: 1, 2, 3, …"
+    },
+    {
+        "nivel": "muy fácil",
+        "enunciado": "¿Cuál es la mejor clasificación para el número −3?",
+        "opciones3": ["Entero negativo", "Número natural", "Número irracional"],
+        "correcta": "Entero negativo",
+        "nota": "Los enteros incluyen negativos, cero y positivos."
+    },
+    {
+        "nivel": "muy fácil",
+        "enunciado": "¿Cuál es la mejor clasificación para el número 1/2?",
+        "opciones3": ["Número racional", "Número natural", "Número irracional"],
+        "correcta": "Número racional",
+        "nota": "Un racional puede escribirse como fracción de enteros."
+    },
+    {
+        "nivel": "muy fácil",
+        "enunciado": "La raíz cuadrada de 9 es 3. ¿Cómo clasificas ese resultado?",
+        "opciones3": ["Entero positivo", "Número irracional", "Número natural"],
+        "correcta": "Entero positivo",
+        "nota": "El resultado es 3, que también es natural, pero la mejor etiqueta aquí es entero positivo."
+    },
 
-👉 En ejercicios de clasificación, **elige la categoría más específica** entre las opciones dadas (p. ej., si un número es entero y también racional, la opción correcta será "Entero").
-"""
+    # --- FÁCIL ---
+    {
+        "nivel": "fácil",
+        "enunciado": "¿Cómo clasificas √2?",
+        "opciones3": ["Número irracional", "Número racional", "Entero positivo"],
+        "correcta": "Número irracional",
+        "nota": "Su decimal es infinito no periódico."
+    },
+    {
+        "nivel": "fácil",
+        "enunciado": "¿Cuál es la mejor clasificación para el número 0?",
+        "opciones3": ["Número entero", "Número natural", "Número irracional"],
+        "correcta": "Número entero",
+        "nota": "Aquí consideramos que 0 no es natural."
+    },
+    {
+        "nivel": "fácil",
+        "enunciado": "¿Cómo clasificas −7.25?",
+        "opciones3": ["Número racional", "Número irracional", "Entero negativo"],
+        "correcta": "Número racional",
+        "nota": "Es un decimal finito, por lo tanto racional."
+    },
+    {
+        "nivel": "fácil",
+        "enunciado": "¿Cómo clasificas 25/5?",
+        "opciones3": ["Número entero", "Número irracional", "Número racional"],
+        "correcta": "Número entero",
+        "nota": "25/5 = 5, que es un entero."
+    },
 
-NO_SE = "No sé, no recuerdo"
-
-# ----------------------------------
-# Banco de preguntas (15 ítems)
-# ----------------------------------
-QUESTION_BANK: List[Dict] = [
+    # --- PARA PENSAR ---
     {
-        "id": 1,
-        "difficulty": "Básico",
-        "prompt": "¿Cuál es la clasificación más específica de **7**?",
-        "correct": "Natural (ℕ)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"],
-        "explanation": "7 pertenece a ℕ, por lo tanto también a ℤ, ℚ y ℝ, pero la clasificación más específica es Natural."
+        "nivel": "para pensar",
+        "enunciado": "¿Cómo clasificas 0.333... (con el 3 repitiéndose sin fin)?",
+        "opciones3": ["Número racional", "Número irracional", "Número natural"],
+        "correcta": "Número racional",
+        "nota": "Es un decimal periódico, por lo tanto racional (1/3)."
     },
     {
-        "id": 2,
-        "difficulty": "Básico",
-        "prompt": "¿Cuál es la clasificación más específica de **0**?",
-        "correct": "Entero (ℤ, no natural)",
-        "distractors": ["Natural (ℕ)", "Irracional (ℝ\\ℚ)"],
-        "explanation": "Bajo nuestra convención, 0 no es natural; sí es entero y por lo tanto racional y real."
+        "nivel": "para pensar",
+        "enunciado": "¿Cómo clasificas −√(16)?",
+        "opciones3": ["Entero negativo", "Número irracional", "Número natural"],
+        "correcta": "Entero negativo",
+        "nota": "−√(16) = −4, que es un entero negativo."
     },
     {
-        "id": 3,
-        "difficulty": "Básico",
-        "prompt": "¿Cuál es la clasificación más específica de **−12**?",
-        "correct": "Entero (ℤ)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"],
-        "explanation": "−12 es un entero; por ende es racional y real, pero la categoría más específica de las ofrecidas es Entero."
+        "nivel": "para pensar",
+        "enunciado": "¿Cómo clasificas π (pi)?",
+        "opciones3": ["Número irracional", "Número racional", "Número entero"],
+        "correcta": "Número irracional",
+        "nota": "Su decimal es infinito no periódico."
     },
     {
-        "id": 4,
-        "difficulty": "Básico",
-        "prompt": "¿Cuál es la clasificación más específica de **3/5**?",
-        "correct": "Racional (ℚ, no entero)",
-        "distractors": ["Natural (ℕ)", "Irracional (ℝ\\ℚ)"],
-        "explanation": "3/5 es una fracción de enteros, por lo tanto es racional y no entero."
-    },
-    {
-        "id": 5,
-        "difficulty": "Básico",
-        "prompt": "¿Cuál es la clasificación más específica de **−9/3**?",
-        "correct": "Entero (ℤ)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"],
-        "explanation": "−9/3 = −3, que es un entero."
-    },
-    {
-        "id": 6,
-        "difficulty": "Intermedio",
-        "prompt": "¿Cuál es la clasificación más específica de **√16**?",
-        "correct": "Natural (ℕ)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"],
-        "explanation": "√16 = 4, que es natural (y también entero, racional y real)."
-    },
-    {
-        "id": 7,
-        "difficulty": "Intermedio",
-        "prompt": "¿Cuál es la clasificación más específica de **√2**?",
-        "correct": "Irracional (ℝ\\ℚ)",
-        "distractors": ["Racional (ℚ, no entero)", "Entero (ℤ)"],
-        "explanation": "√2 no puede expresarse como fracción de enteros; es irracional."
-    },
-    {
-        "id": 8,
-        "difficulty": "Intermedio",
-        "prompt": "¿Cuál es la clasificación más específica de **0.125**?",
-        "correct": "Racional (ℚ, no entero)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Entero (ℤ)"],
-        "explanation": "0.125 es decimal finito: 1/8, por lo tanto racional."
-    },
-    {
-        "id": 9,
-        "difficulty": "Intermedio",
-        "prompt": "¿Cuál es la clasificación más específica de **0.333...** (decimal periódico)?",
-        "correct": "Racional (ℚ, no entero)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Entero (ℤ)"],
-        "explanation": "0.333... = 1/3, un número racional (no entero)."
-    },
-    {
-        "id": 10,
-        "difficulty": "Intermedio",
-        "prompt": "¿Cuál es la clasificación más específica de **−√49**?",
-        "correct": "Entero (ℤ)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"],
-        "explanation": "−√49 = −7, que es un entero."
-    },
-    {
-        "id": 11,
-        "difficulty": "Avanzado",
-        "prompt": "¿Cuál de los siguientes **sí** es un subconjunto propio de $\mathbb{Q}$?",
-        "correct": "$\mathbb{Z}$",
-        "distractors": ["$\mathbb{R}$", "Irracionales ($\mathbb{R} \\setminus \mathbb{Q}$)"],
-        "explanation": "$\mathbb{Z} \subset \mathbb{Q}$. En cambio, $\mathbb{R}$ no es subconjunto de $\mathbb{Q}$ y el conjunto de irracionales tampoco es subconjunto de $\mathbb{Q}$."
-    },
-    {
-        "id": 12,
-        "difficulty": "Avanzado",
-        "prompt": "¿Cuál de los siguientes números es **irracional**?",
-        "correct": "√50",
-        "distractors": ["0.25", "−1.5"],
-        "explanation": "√50 = 5√2 es irracional; 0.25 = 1/4 y −1.5 = −3/2 son racionales."
-    },
-    {
-        "id": 13,
-        "difficulty": "Avanzado",
-        "prompt": "¿Cuál afirmación es **falsa**?",
-        "correct": "Todo número entero es natural",
-        "distractors": ["Todo número natural es entero", "Todo número racional es real"],
-        "explanation": "No todo entero es natural (p. ej., −1). Las otras afirmaciones son verdaderas bajo nuestras convenciones."
-    },
-    {
-        "id": 14,
-        "difficulty": "Avanzado",
-        "prompt": "¿Cuál número es **racional pero no entero**?",
-        "correct": "7/2",
-        "distractors": ["−4", "√9"],
-        "explanation": "7/2 es fracción propia (3.5), racional no entero; −4 y √9 = 3 son enteros."
-    },
-    {
-        "id": 15,
-        "difficulty": "Básico",
-        "prompt": "Según nuestras convenciones, ¿cuál de estos **sí** pertenece a $\mathbb{N}$?",
-        "correct": "1",
-        "distractors": ["0", "−1"],
-        "explanation": "Aquí definimos $\mathbb{N}=\{1,2,3,\dots\}$; 1 es natural, 0 y −1 no lo son."
+        "nivel": "para pensar",
+        "enunciado": "¿Cómo clasificas 4/0?",
+        "opciones3": ["No es un número real", "Número racional", "Número irracional"],
+        "correcta": "No es un número real",
+        "nota": "La división entre cero no está definida en los números reales."
     },
 ]
 
-# ------------------------------------------------------
-# Utilidades para barajar y mantener estado de opciones
-# ------------------------------------------------------
+# Inicializar estado
+if "respuestas" not in st.session_state:
+    st.session_state.respuestas = [None] * len(EXERCISES)
+if "calificado" not in st.session_state:
+    st.session_state.calificado = False
 
-def init_state():
-    if "initialized" not in st.session_state:
-        st.session_state.initialized = True
-        st.session_state.shuffled_ids: List[int] = []
-        st.session_state.option_order: Dict[int, List[str]] = {}
-        st.session_state.responses: Dict[int, str] = {}
-        st.session_state.graded = False
-        st.session_state.score = 0
-        st.session_state.breakdown = {}
-        st.session_state.review = []
+st.title("🧮 Banco de ejercicios: números naturales, enteros, racionales e irracionales")
 
+with st.expander("Instrucciones", expanded=True):
+    st.markdown(
+        """
+- Responde cada ejercicio eligiendo **una** opción.
+- La última opción siempre es **“No sé, no recuerdo”**.
+- Al final, pulsa **Calificar** para ver tu porcentaje de aciertos.
+- Convenciones usadas:
+  - Naturales: 1, 2, 3, … (sin incluir el 0).
+  - Enteros: …, −2, −1, 0, 1, 2, …
+  - Racionales: pueden escribirse como fracción de enteros (incluye decimales finitos y periódicos).
+  - Irracionales: decimales infinitos no periódicos.
+        """
+    )
 
-def reset_quiz(shuffle_questions: bool = True):
-    random.seed(RANDOM_SEED)
-    st.session_state.shuffled_ids = [q["id"] for q in QUESTION_BANK]
-    if shuffle_questions:
-        random.shuffle(st.session_state.shuffled_ids)
-    st.session_state.option_order = {}
-    st.session_state.responses = {}
-    st.session_state.graded = False
-    st.session_state.score = 0
-    st.session_state.breakdown = {}
-    st.session_state.review = []
+st.subheader("Ejercicios")
 
+# Render de preguntas
+for idx, ej in enumerate(EXERCISES, start=1):
+    st.markdown(f"**{idx}. ({ej['nivel']})** {ej['enunciado']}")
+    opciones = shuffled_with_idk(ej["opciones3"])
+    key = f"q_{idx}"
 
-def get_question_by_id(qid: int) -> Dict:
-    return next(q for q in QUESTION_BANK if q["id"] == qid)
+    # Mantener selección previa
+    if st.session_state.respuestas[idx - 1] is not None and st.session_state.respuestas[idx - 1] in opciones:
+        default_index = opciones.index(st.session_state.respuestas[idx - 1])
+    else:
+        default_index = None
 
+    seleccion = st.radio(
+        label="Elige una opción:",
+        options=opciones,
+        index=default_index if default_index is not None else 0,
+        key=key,
+        horizontal=False,
+    )
+    # Guardar respuesta en estado
+    st.session_state.respuestas[idx - 1] = seleccion
 
-def get_options_for(q: Dict) -> List[str]:
-    """Devuelve un orden estable de opciones (incluyendo NO_SE) por pregunta."""
-    qid = q["id"]
-    if qid not in st.session_state.option_order:
-        opts = [q["correct"], *q["distractors"], NO_SE]
-        random.shuffle(opts)
-        st.session_state.option_order[qid] = opts
-    return st.session_state.option_order[qid]
+    st.markdown("---")
 
-
-def grade_quiz():
-    total = len(QUESTION_BANK)
-    correct = 0
-    breakdown = {"Básico": {"ok": 0, "total": 0},
-                 "Intermedio": {"ok": 0, "total": 0},
-                 "Avanzado": {"ok": 0, "total": 0}}
-    review_rows = []
-
-    for qid in st.session_state.shuffled_ids:
-        q = get_question_by_id(qid)
-        diff = q["difficulty"]
-        breakdown[diff]["total"] += 1
-        selected = st.session_state.responses.get(qid, None)
-        is_correct = selected == q["correct"]
-        if is_correct:
-            correct += 1
-            breakdown[diff]["ok"] += 1
-        else:
-            review_rows.append({
-                "#": len(review_rows) + 1,
-                "Dificultad": diff,
-                "Pregunta": q["prompt"],
-                "Tu respuesta": selected if selected else "(sin responder)",
-                "Respuesta correcta": q["correct"],
-                "Explicación": q["explanation"],
-            })
-
-    st.session_state.score = correct
-    st.session_state.breakdown = breakdown
-    st.session_state.review = review_rows
-    st.session_state.graded = True
-
-
-# --------------------
-# App principal (UI)
-# --------------------
-init_state()
-
-st.title("Banco de ejercicios: Números reales")
-st.caption("15 reactivos con opción múltiple • 1 correcta, 2 distractores y una opción de \"No sé\" • Dificultad creciente")
-
-with st.expander("📚 Ver convenciones y recordatorios", expanded=False):
-    st.markdown(HELP_MD)
-
-cols = st.columns([1, 1, 1])
+# Botones
+cols = st.columns([1, 1, 2])
 with cols[0]:
-    shuffle_q = st.checkbox("Barajar preguntas", value=True)
+    calificar = st.button("✅ Calificar", use_container_width=True)
 with cols[1]:
     if st.button("🔄 Reiniciar", use_container_width=True):
-        reset_quiz(shuffle_questions=shuffle_q)
-with cols[2]:
-    show_idx = st.checkbox("Mostrar numeración original", value=False)
+        st.session_state.respuestas = [None] * len(EXERCISES)
+        st.session_state.calificado = False
+        st.rerun()
 
-if not st.session_state.shuffled_ids:
-    reset_quiz(shuffle_questions=True)
+# Calificación
+if calificar:
+    correctas = 0
+    detalles = []
+    for i, ej in enumerate(EXERCISES):
+        respuesta = st.session_state.respuestas[i]
+        es_correcta = (respuesta == ej["correcta"])
+        if es_correcta:
+            correctas += 1
+        detalles.append({
+            "n": i + 1,
+            "nivel": ej["nivel"],
+            "enunciado": ej["enunciado"],
+            "tu_respuesta": respuesta if respuesta is not None else "No respondida",
+            "correcta": ej["correcta"],
+            "acierto": "✔️" if es_correcta else "❌",
+            "nota": ej["nota"]
+        })
 
-answered = sum(1 for qid in st.session_state.shuffled_ids if st.session_state.responses.get(qid))
-st.progress(answered / len(QUESTION_BANK))
-st.write(f"**Progreso:** {answered}/{len(QUESTION_BANK)} preguntas respondidas")
+    total = len(EXERCISES)
+    porcentaje = round(100 * correctas / total, 2)
 
-st.divider()
+    st.session_state.calificado = True
 
-for i, qid in enumerate(st.session_state.shuffled_ids, start=1):
-    q = get_question_by_id(qid)
-    opts = get_options_for(q)
+    st.success(f"Resultado: {correctas}/{total} aciertos · **{porcentaje}%**")
 
-    st.markdown(f"### {i}. {q['prompt']}")
-    st.markdown(f"**Dificultad:** {q['difficulty']}")
+    # Desglose por nivel
+    niveles = {"muy fácil": [0, 0], "fácil": [0, 0], "para pensar": [0, 0]}  # [aciertos, total]
+    for d in detalles:
+        niveles[d["nivel"]][1] += 1
+        if d["acierto"] == "✔️":
+            niveles[d["nivel"]][0] += 1
 
-    key_radio = f"resp_{qid}"
-    default = st.session_state.responses.get(qid, None)
-    choice = st.radio(
-        label="Selecciona una opción:",
-        options=opts,
-        index=opts.index(default) if default in opts else None,
-        key=key_radio,
-    )
-    st.session_state.responses[qid] = choice
+    with st.expander("Ver desglose por nivel"):
+        for k, (a, t) in niveles.items():
+            st.write(f"- {k.capitalize()}: {a}/{t} ({round(100*a/t, 1)}%)")
 
-    if st.session_state.graded:
-        if choice == q["correct"]:
-            st.success("✔️ ¡Correcto!")
-        else:
-            st.error("✖️ Incorrecto")
-            with st.popover("Ver explicación"):
-                st.write(f"**Respuesta correcta:** {q['correct']}")
-                st.write(q["explanation"])
-
-    if show_idx:
-        st.caption(f"id: {qid}")
-
-    st.divider()
-
-col_a, col_b = st.columns(2)
-with col_a:
-    if st.button("📝 Calificar intento", type="primary", use_container_width=True):
-        grade_quiz()
-with col_b:
-    if st.button("🧹 Limpiar respuestas", use_container_width=True):
-        st.session_state.responses = {}
-        st.session_state.graded = False
-        st.session_state.score = 0
-        st.session_state.breakdown = {}
-        st.session_state.review = []
-
-if st.session_state.graded:
-    total = len(QUESTION_BANK)
-    score = st.session_state.score
-    st.subheader("Resultados")
-    st.metric(label="Puntaje", value=f"{score}/{total}", delta=f"{round(100*score/total)}%")
-
-    b = st.session_state.breakdown
-    st.write("**Desglose por dificultad**")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Básico", f"{b['Básico']['ok']}/{b['Básico']['total']}")
-    col2.metric("Intermedio", f"{b['Intermedio']['ok']}/{b['Intermedio']['total']}")
-    col3.metric("Avanzado", f"{b['Avanzado']['ok']}/{b['Avanzado']['total']}")
-
-    if st.session_state.review:
-        st.write("\n**Preguntas para repasar** (falladas u omitidas):")
-        for row in st.session_state.review:
-            with st.expander(f"{row['#']}. {row['Pregunta']}"):
-                st.write(f"**Tu respuesta:** {row['Tu respuesta']}")
-                st.write(f"**Respuesta correcta:** {row['Respuesta correcta']}")
-                st.write(row["Explicación"])
+    # Tabla de retroalimentación
+    with st.expander("Revisar pregunta por pregunta"):
+        for d in detalles:
+            st.markdown(f"**{d['n']}. ({d['nivel']})** {d['enunciado']}")
+            st.write(f"Tu respuesta: {d['tu_respuesta']}  {d['acierto']}")
+            if d["acierto"] == "❌":
+                st.write(f"Respuesta correcta: **{d['correcta']}**")
+            st.caption(d["nota"])
+            st.markdown("---")
