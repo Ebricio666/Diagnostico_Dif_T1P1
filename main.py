@@ -53,7 +53,7 @@ QUESTION_BANK: List[Dict] = [
         "difficulty": "Básico",
         "prompt": "¿Cuál es la clasificación más específica de **−12**?",
         "correct": "Entero (ℤ)",
-        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"];,
+        "distractors": ["Irracional (ℝ\\ℚ)", "Racional (ℚ, no entero)"],
         "explanation": "−12 es un entero; por ende es racional y real, pero la categoría más específica de las ofrecidas es Entero."
     },
     {
