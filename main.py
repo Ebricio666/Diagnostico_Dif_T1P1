@@ -4,52 +4,46 @@ import random
 st.set_page_config(page_title="Banco de ejercicios: números", page_icon="🧮", layout="centered")
 
 # -----------------------------
-# Reglas didácticas usadas
+# Funciones auxiliares
 # -----------------------------
-# - Considera "números naturales" como 1, 2, 3, ... (sin incluir el cero).
-# - Un número entero puede ser negativo, cero o positivo (…,-2,-1,0,1,2,…).
-# - Un número racional puede escribirse como fracción de enteros (incluye decimales finitos y periódicos).
-# - Un número irracional no puede escribirse como fracción de enteros (decimales infinitos no periódicos).
-# - 4/0 no es un número real (no está definido).
-
-# Utilidad: barajar manteniendo "No sé, no recuerdo" al final
-def shuffled_with_idk(options3):
-    opts = options3[:]  # copia
+def get_options(correct, distractors):
+    """Devuelve lista barajada con correctas, distractores y 'No sé, no recuerdo'."""
+    opts = [correct] + distractors
     random.shuffle(opts)
     opts.append("No sé, no recuerdo")
     return opts
 
-# Base de ejercicios (12)
-# Cada ejercicio: enunciado, nivel, opciones3 (tres primeras sin "No sé, no recuerdo"),
-# y la respuesta correcta entre esas tres.
+# -----------------------------
+# Banco de ejercicios
+# -----------------------------
 EXERCISES = [
     # --- MUY FÁCIL ---
     {
         "nivel": "muy fácil",
         "enunciado": "¿Cuál es la mejor clasificación para el número 7?",
-        "opciones3": ["Número natural", "Entero negativo", "Número irracional"],
         "correcta": "Número natural",
+        "distractors": ["Entero negativo", "Número irracional"],
         "nota": "Los naturales comienzan en 1 y suben: 1, 2, 3, …"
     },
     {
         "nivel": "muy fácil",
         "enunciado": "¿Cuál es la mejor clasificación para el número −3?",
-        "opciones3": ["Entero negativo", "Número natural", "Número irracional"],
         "correcta": "Entero negativo",
+        "distractors": ["Número natural", "Número irracional"],
         "nota": "Los enteros incluyen negativos, cero y positivos."
     },
     {
         "nivel": "muy fácil",
         "enunciado": "¿Cuál es la mejor clasificación para el número 1/2?",
-        "opciones3": ["Número racional", "Número natural", "Número irracional"],
         "correcta": "Número racional",
+        "distractors": ["Número natural", "Número irracional"],
         "nota": "Un racional puede escribirse como fracción de enteros."
     },
     {
         "nivel": "muy fácil",
         "enunciado": "La raíz cuadrada de 9 es 3. ¿Cómo clasificas ese resultado?",
-        "opciones3": ["Entero positivo", "Número irracional", "Número natural"],
         "correcta": "Entero positivo",
+        "distractors": ["Número irracional", "Número natural"],
         "nota": "El resultado es 3, que también es natural, pero la mejor etiqueta aquí es entero positivo."
     },
 
@@ -57,29 +51,29 @@ EXERCISES = [
     {
         "nivel": "fácil",
         "enunciado": "¿Cómo clasificas √2?",
-        "opciones3": ["Número irracional", "Número racional", "Entero positivo"],
         "correcta": "Número irracional",
+        "distractors": ["Número racional", "Entero positivo"],
         "nota": "Su decimal es infinito no periódico."
     },
     {
         "nivel": "fácil",
         "enunciado": "¿Cuál es la mejor clasificación para el número 0?",
-        "opciones3": ["Número entero", "Número natural", "Número irracional"],
         "correcta": "Número entero",
+        "distractors": ["Número natural", "Número irracional"],
         "nota": "Aquí consideramos que 0 no es natural."
     },
     {
         "nivel": "fácil",
         "enunciado": "¿Cómo clasificas −7.25?",
-        "opciones3": ["Número racional", "Número irracional", "Entero negativo"],
         "correcta": "Número racional",
+        "distractors": ["Número irracional", "Entero negativo"],
         "nota": "Es un decimal finito, por lo tanto racional."
     },
     {
         "nivel": "fácil",
         "enunciado": "¿Cómo clasificas 25/5?",
-        "opciones3": ["Número entero", "Número irracional", "Número racional"],
         "correcta": "Número entero",
+        "distractors": ["Número irracional", "Número racional"],
         "nota": "25/5 = 5, que es un entero."
     },
 
@@ -87,39 +81,44 @@ EXERCISES = [
     {
         "nivel": "para pensar",
         "enunciado": "¿Cómo clasificas 0.333... (con el 3 repitiéndose sin fin)?",
-        "opciones3": ["Número racional", "Número irracional", "Número natural"],
         "correcta": "Número racional",
+        "distractors": ["Número irracional", "Número natural"],
         "nota": "Es un decimal periódico, por lo tanto racional (1/3)."
     },
     {
         "nivel": "para pensar",
         "enunciado": "¿Cómo clasificas −√(16)?",
-        "opciones3": ["Entero negativo", "Número irracional", "Número natural"],
         "correcta": "Entero negativo",
+        "distractors": ["Número irracional", "Número natural"],
         "nota": "−√(16) = −4, que es un entero negativo."
     },
     {
         "nivel": "para pensar",
         "enunciado": "¿Cómo clasificas π (pi)?",
-        "opciones3": ["Número irracional", "Número racional", "Número entero"],
         "correcta": "Número irracional",
+        "distractors": ["Número racional", "Número entero"],
         "nota": "Su decimal es infinito no periódico."
     },
     {
         "nivel": "para pensar",
         "enunciado": "¿Cómo clasificas 4/0?",
-        "opciones3": ["No es un número real", "Número racional", "Número irracional"],
         "correcta": "No es un número real",
+        "distractors": ["Número racional", "Número irracional"],
         "nota": "La división entre cero no está definida en los números reales."
     },
 ]
 
-# Inicializar estado
+# -----------------------------
+# Estado de la app
+# -----------------------------
 if "respuestas" not in st.session_state:
     st.session_state.respuestas = [None] * len(EXERCISES)
 if "calificado" not in st.session_state:
     st.session_state.calificado = False
 
+# -----------------------------
+# Interfaz
+# -----------------------------
 st.title("🧮 Banco de ejercicios: números naturales, enteros, racionales e irracionales")
 
 with st.expander("Instrucciones", expanded=True):
@@ -138,28 +137,20 @@ with st.expander("Instrucciones", expanded=True):
 
 st.subheader("Ejercicios")
 
-# Render de preguntas
+# Preguntas
 for idx, ej in enumerate(EXERCISES, start=1):
     st.markdown(f"**{idx}. ({ej['nivel']})** {ej['enunciado']}")
-    opciones = shuffled_with_idk(ej["opciones3"])
+    opciones = get_options(ej["correcta"], ej["distractors"])
+
     key = f"q_{idx}"
-
-    # Mantener selección previa
-    if st.session_state.respuestas[idx - 1] is not None and st.session_state.respuestas[idx - 1] in opciones:
-        default_index = opciones.index(st.session_state.respuestas[idx - 1])
-    else:
-        default_index = None
-
     seleccion = st.radio(
         label="Elige una opción:",
         options=opciones,
-        index=default_index if default_index is not None else 0,
+        index=opciones.index(st.session_state.respuestas[idx-1]) if st.session_state.respuestas[idx-1] else 0,
         key=key,
-        horizontal=False,
     )
-    # Guardar respuesta en estado
-    st.session_state.respuestas[idx - 1] = seleccion
 
+    st.session_state.respuestas[idx - 1] = seleccion
     st.markdown("---")
 
 # Botones
@@ -172,10 +163,14 @@ with cols[1]:
         st.session_state.calificado = False
         st.rerun()
 
+# -----------------------------
 # Calificación
+# -----------------------------
 if calificar:
     correctas = 0
+    total = len(EXERCISES)
     detalles = []
+
     for i, ej in enumerate(EXERCISES):
         respuesta = st.session_state.respuestas[i]
         es_correcta = (respuesta == ej["correcta"])
@@ -185,21 +180,19 @@ if calificar:
             "n": i + 1,
             "nivel": ej["nivel"],
             "enunciado": ej["enunciado"],
-            "tu_respuesta": respuesta if respuesta is not None else "No respondida",
+            "tu_respuesta": respuesta if respuesta else "No respondida",
             "correcta": ej["correcta"],
             "acierto": "✔️" if es_correcta else "❌",
             "nota": ej["nota"]
         })
 
-    total = len(EXERCISES)
     porcentaje = round(100 * correctas / total, 2)
-
     st.session_state.calificado = True
 
     st.success(f"Resultado: {correctas}/{total} aciertos · **{porcentaje}%**")
 
     # Desglose por nivel
-    niveles = {"muy fácil": [0, 0], "fácil": [0, 0], "para pensar": [0, 0]}  # [aciertos, total]
+    niveles = {"muy fácil": [0, 0], "fácil": [0, 0], "para pensar": [0, 0]}
     for d in detalles:
         niveles[d["nivel"]][1] += 1
         if d["acierto"] == "✔️":
@@ -209,7 +202,6 @@ if calificar:
         for k, (a, t) in niveles.items():
             st.write(f"- {k.capitalize()}: {a}/{t} ({round(100*a/t, 1)}%)")
 
-    # Tabla de retroalimentación
     with st.expander("Revisar pregunta por pregunta"):
         for d in detalles:
             st.markdown(f"**{d['n']}. ({d['nivel']})** {d['enunciado']}")
